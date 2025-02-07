@@ -1,4 +1,4 @@
-import { Telegraf, Markup } from 'telegraf'
+const { Telegraf, Markup } = require('telegraf');
 
 const token = '8157631291:AAHHF6HvP-MeYLJ5p48pgA2MGcySu79zJVg'
 const webAppUrl = 'https://gamburger-cliker.web.app/'
