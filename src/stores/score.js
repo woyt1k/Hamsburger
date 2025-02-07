@@ -1,37 +1,12 @@
 import { defineStore } from 'pinia';
+import { addOrUpdateUserScore, getUserScore } from '@/services/supabase';
+import { useTelegram } from '@/services/telegram';
 
-// Базовый уровень и вычисление уровней
-const baseLevelScore = 25;
-const levels = Array.from({ length: 15 }, (_, i) => baseLevelScore * (2 ** i));
-
-// Функция для вычисления текущего уровня и порогов
-const computeLevelByScore = (score) => {
-  let previousThreshold = 0;
-
-  for (let i = 0; i < levels.length; i++) {
-    if (score < levels[i]) {
-      return {
-        level: i,
-        currentThreshold: levels[i],
-        previousThreshold,
-      };
-    }
-    previousThreshold = levels[i];
-  }
-
-  // Если счет превышает все уровни, возвращаем последний
-  return {
-    level: levels.length - 1,
-    currentThreshold: levels[levels.length - 1],
-    previousThreshold: levels[levels.length - 2] || 0,
-  };
-};
-
-// Хранилище Pinia
 export const useScoreStore = defineStore('score', {
   state: () => ({
-    currentScore: 0, // Общий счет
-    levelScore: 0,   // Очки на текущем уровне
+    currentScore: 0,
+    levelScore: 0,
+    telegramId: null,
   }),
   getters: {
     level(state) {
@@ -41,25 +16,76 @@ export const useScoreStore = defineStore('score', {
       const { previousThreshold, currentThreshold } = this.level;
       const levelRange = currentThreshold - previousThreshold;
 
-      if (levelRange <= 0) return 0; // Защита от деления на ноль
-      return ((state.levelScore) / levelRange) * 100;
+      if (levelRange <= 0) return 0;
+      return (state.levelScore / levelRange) * 100;
     },
   },
   actions: {
-    add(score = 1) {
-      console.log('Before add:', this.currentScore, this.levelScore);
+    async initializeUser(telegramId) {
+      this.telegramId = telegramId; // Сохраняем telegramId
+      const userScore = await getUserScore(telegramId);
+      this.currentScore = userScore?.score || 0; // Устанавливаем очки
+      const { previousThreshold } = this.level;
+      this.levelScore = this.currentScore - previousThreshold; // Инициализируем уровень
+
+      const { tg } = useTelegram();
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred("medium"); 
+        console.log("Тактильная обратная связь: Инициализация пользователя.");
+      }
+    },
+    async add(score = 1) {
       this.currentScore += score;
-  
       const { currentThreshold, previousThreshold } = this.level;
-  
-      // Пересчет очков для текущего уровня
+
       if (this.currentScore >= currentThreshold) {
-        this.levelScore = 0; // Новый уровень
+        const newLevel = computeLevelByScore(this.currentScore);
+        this.levelScore = this.currentScore - newLevel.previousThreshold;
+        const { tg } = useTelegram();
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.impactOccurred("success");
+          console.log("Тактильная обратная связь: Уровень обновлен.");
+        }
       } else {
         this.levelScore = this.currentScore - previousThreshold;
+        const { tg } = useTelegram();
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.impactOccurred("warning");
+          console.log("Тактильная обратная связь: Прогресс обновлен.");
+        }
       }
-  
-      console.log('After add:', this.currentScore, this.levelScore);
+      if (this.telegramId) {
+        await addOrUpdateUserScore(this.telegramId, this.currentScore);
+      }
     },
-  }  
+  },
 });
+
+function computeLevelByScore(score) {
+  const levels = [
+    { level: 0, previousThreshold: 0, currentThreshold: 10 },  
+    { level: 1, previousThreshold: 10, currentThreshold: 25 }, 
+    { level: 2, previousThreshold: 25, currentThreshold: 50 }, 
+    { level: 3, previousThreshold: 50, currentThreshold: 100 }, 
+    { level: 4, previousThreshold: 100, currentThreshold: 200 }
+  ];
+
+  let previousThreshold = 200;
+  let currentThreshold = 400;
+  for (let i = 5; i <= 100; i++) { 
+    levels.push({
+      level: i,
+      previousThreshold: previousThreshold,
+      currentThreshold: currentThreshold,
+    });
+    previousThreshold = currentThreshold;
+    currentThreshold *= 2; 
+  }
+
+  for (const level of levels) {
+    if (score >= level.previousThreshold && score < level.currentThreshold) {
+      return level;
+    }
+  }
+  return levels[0];
+}

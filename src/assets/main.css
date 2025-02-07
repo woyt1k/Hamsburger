@@ -12,10 +12,44 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
+  background: linear-gradient(
+    to top right, 
+    rgba(0, 200, 255, 0.7) 0%, /* Более насыщенный голубой */
+    rgba(0, 0, 0, 0.5) 50%, 
+    rgb(0, 0, 0) 100%
+  );
   background-color: #1c1f24;
   overflow-y: hidden;
   overflow-x: hidden;
+  position: relative;
 }
+
+body::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(
+    circle, 
+    rgba(0, 200, 255, 0.8) 0%, /* Более яркий голубой */
+    rgba(0, 0, 0, 0) 100%
+  );
+  z-index: -1; /* Элемент позади основного содержимого */
+}
+
+body::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 50%;
+  background: #000; /* Чисто черный цвет */
+  z-index: -1; /* Элемент позади основного содержимого */
+}
+
 
 .header {
   display: flex;
@@ -113,6 +147,10 @@ body {
     opacity: 0;
     transform: translateY(-50px);
   }
+}
+.disable-animations * {
+  animation: none !important;
+  transition: none !important;
 }
 
 .game {

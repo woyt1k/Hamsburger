@@ -1,27 +1,49 @@
-import './assets/main.css'
+import './assets/main.css';
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import router from './router';
+import { useTelegram } from './services/telegram.js'; 
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+const app = createApp(App);
+app.use(createPinia());
+app.use(router);
 
-import App from './App.vue'
-import router from './router'
+app.mount('#app');
 
-const app = createApp(App)
-
-app.use(createPinia())
-app.use(router)
-
-app.mount('#app')
-
-// Telegram API expand
 if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
-}
+  const { tg, triggerHapticFeedback } = useTelegram();
 
-// Добавляем обработчик на изменение размеров экрана
-window.addEventListener('resize', () => {
-    if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.expand();
+  tg.ready();
+  tg.expand();
+
+  const updateBackButton = () => {
+    const currentRoute = router.currentRoute.value.name;
+
+    if (currentRoute !== 'home') {
+      tg.BackButton.show();
+      tg.BackButton.onClick(() => {
+        triggerHapticFeedback("impact", { impact_style: "medium" });
+        router.push('/');
+      });
+    } else {
+      tg.BackButton.hide();
     }
-});
+  };
+
+  app.directive('haptic', {
+    mounted(el, binding) {
+      el.addEventListener('click', () => {
+        const { triggerHapticFeedback } = useTelegram();
+        const { type = 'impact', options = { impact_style: 'light' } } = binding.value || {};
+        triggerHapticFeedback(type, options);
+      });
+    },
+  });
+  
+  router.afterEach(() => {
+    updateBackButton();
+  });
+
+  updateBackButton();
+}
