@@ -4,36 +4,32 @@
       <div class="menu-content">
         <h1>Настройки</h1>
         <div class="setting-item">
-          <p>Сменить язык</p>
-          <button class="arrow-button" @click="changeLanguage">
-            {{ settings.language }}
+          <button class="exchange-button" @click="changeLanguage">
+            <span class="exchange-name">Сменить язык</span>
+            <img src="@/assets/arrow.png" alt="Arrow" class="arrow-icon" />
           </button>
         </div>
         <div class="setting-item">
-          <p>Сменить биржу</p>
-          <button class="arrow-button" @click="changeExchange">
-            {{ settings.exchange }}
+          <button class="exchange-button" @click="changeExchange">
+            <span class="exchange-name">Сменить биржу</span>
+            <img src="@/assets/arrow.png" alt="Arrow" class="arrow-icon" />
           </button>
         </div>
-        <div class="setting-item toggle">
-          <p>Вибрация</p>
-          <div
-            class="toggle-switch"
-            :class="{ active: settings.vibrationEnabled }"
-            @click="toggleVibration"
-          >
-            <div class="switch"></div>
-          </div>
+        <div class="setting-item">
+          <button class="exchange-button" @click="toggleVibration">
+            <span class="exchange-name">Вибрация</span>
+            <div class="toggle-switch" :class="{ active: settings.vibrationEnabled }">
+              <div class="switch"></div>
+            </div>
+          </button>
         </div>
-        <div class="setting-item toggle">
-          <p>Анимация</p>
-          <div
-            class="toggle-switch"
-            :class="{ active: settings.animationEnabled }"
-            @click="toggleAnimation"
-          >
-            <div class="switch"></div>
-          </div>
+        <div class="setting-item">
+          <button class="exchange-button" @click="toggleAnimation">
+            <span class="exchange-name">Анимация</span>
+            <div class="toggle-switch" :class="{ active: settings.animationEnabled }">
+              <div class="switch"></div>
+            </div>
+          </button>
         </div>
       </div>
       <footer>
@@ -42,6 +38,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import { useTelegram } from "../services/telegram";
@@ -52,96 +49,47 @@ export default {
       settings: {
         language: "Русский",
         exchange: "Bybit",
-        animationEnabled: JSON.parse(localStorage.getItem("animationEnabled")) ?? true, // Загружаем из localStorage
-        vibrationEnabled: JSON.parse(localStorage.getItem("vibrationEnabled")) ?? true, // Загружаем из localStorage
+        animationEnabled: JSON.parse(localStorage.getItem("animationEnabled")) ?? true,
+        vibrationEnabled: JSON.parse(localStorage.getItem("vibrationEnabled")) ?? true,
       },
     };
   },
   methods: {
     toggleAnimation() {
       this.settings.animationEnabled = !this.settings.animationEnabled;
-      localStorage.setItem(
-        "animationEnabled",
-        JSON.stringify(this.settings.animationEnabled)
-      );
-
-      // Применяем или убираем класс disable-animations
-      const body = document.body;
-      if (this.settings.animationEnabled) {
-        body.classList.remove("disable-animations");
-      } else {
-        body.classList.add("disable-animations");
-      }
-
-      console.log(
-        `Анимация: ${this.settings.animationEnabled ? "включена" : "выключена"}`
-      );
+      localStorage.setItem("animationEnabled", JSON.stringify(this.settings.animationEnabled));
+      document.body.classList.toggle("disable-animations", !this.settings.animationEnabled);
     },
     toggleVibration() {
       this.settings.vibrationEnabled = !this.settings.vibrationEnabled;
-      localStorage.setItem(
-        "vibrationEnabled",
-        JSON.stringify(this.settings.vibrationEnabled)
-      );
-
-      if (this.settings.vibrationEnabled) {
-        if (navigator.vibrate) {
-          navigator.vibrate(200); // Вибрация длительностью 200 мс
-        }
-        console.log("Вибрация включена");
-      } else {
-        console.log("Вибрация выключена");
+      localStorage.setItem("vibrationEnabled", JSON.stringify(this.settings.vibrationEnabled));
+      if (this.settings.vibrationEnabled && navigator.vibrate) {
+        navigator.vibrate(200);
       }
     },
     changeLanguage() {
-      this.settings.language =
-        this.settings.language === "Русский" ? "English" : "Русский";
-      console.log(`Язык изменён на: ${this.settings.language}`);
+      this.settings.language = this.settings.language === "Русский" ? "English" : "Русский";
     },
     changeExchange() {
-      this.settings.exchange =
-        this.settings.exchange === "Bybit" ? "Binance" : "Bybit";
-      console.log(`Биржа изменена на: ${this.settings.exchange}`);
+    this.$router.push("/exchanges"); // Перенаправляем на страницу выбора биржи
     },
+
     showPrivacyPolicy() {
       console.log("Открытие политики конфиденциальности...");
     },
   },
-
   mounted() {
     const { tg } = useTelegram();
-
-    // Применяем настройку анимации при загрузке
-    const body = document.body;
-    if (!this.settings.animationEnabled) {
-      body.classList.add("disable-animations");
-    }
-
-    try {
-      tg.BackButton.show();
-      tg.BackButton.onClick(() => {
-        console.log('Кнопка "Назад" нажата в SettingsMenu');
-        if (this.$router) {
-          this.$router.push("/");
-        } else {
-          console.error("Маршрутизатор ($router) недоступен");
-        }
-      });
-    } catch (error) {
-      console.error("Ошибка при активации кнопки 'Назад':", error);
-    }
+    document.body.classList.toggle("disable-animations", !this.settings.animationEnabled);
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => {
+      this.$router.push("/");
+    });
   },
   unmounted() {
     const { tg } = useTelegram();
-
-    try {
-      if (tg.BackButton) {
-        tg.BackButton.hide();
-        tg.BackButton.offClick();
-      }
-    } catch (error) {
-      console.error("Ошибка при отключении кнопки 'Назад':", error);
-    }
+    tg.BackButton.hide();
+    tg.BackButton.offClick();
   },
 };
 </script>
@@ -176,7 +124,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0px;
   align-items: center;
 }
 
@@ -187,34 +135,40 @@ h1 {
 }
 
 .setting-item {
+  width: 100%;
+  padding: 10px 0;
+}
+
+.exchange-button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding: 15px;
-  border-bottom: 1px solid #333;
-}
-
-.setting-item p {
-  margin: 0;
+  background-color: #3f3f3f;
+  color: #fff;
+  border: 2px solid transparent;
+  padding: 12px 20px;
   font-size: 18px;
+  border-radius: 25px;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.3s ease-in-out;
 }
 
-.arrow-button {
-  background: none;
-  border: none;
-  color: #007aff;
-  font-size: 16px;
-  cursor: pointer;
+.exchange-button:hover {
+  border-color: #8d8d8d;
+}
+
+.arrow-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .toggle-switch {
-  width: 50px;
-  height: 25px;
+  width: 40px;
+  height: 20px;
   background: #444;
   border-radius: 15px;
   position: relative;
-  cursor: pointer;
   transition: background 0.3s;
 }
 
@@ -223,18 +177,19 @@ h1 {
 }
 
 .toggle-switch .switch {
-  width: 23px;
-  height: 23px;
+  width: 18px;
+  height: 18px;
   background: white;
   border-radius: 50%;
   position: absolute;
-  top: 1px;
-  left: 1px;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
   transition: transform 0.3s;
 }
 
 .toggle-switch.active .switch {
-  transform: translateX(25px);
+  transform: translate(18px, -50%);
 }
 
 footer {
@@ -247,12 +202,5 @@ footer {
 
 footer:hover {
   color: #fff;
-}
-</style>
-
-<style>
-.disable-animations * {
-  animation: none !important;
-  transition: none !important;
 }
 </style>

@@ -29,6 +29,7 @@ const router = createRouter({
       name: 'exchanges',
       component: () => import('../components/ExchangesMenu.vue'),
     },
+    
   ],
 });
 
