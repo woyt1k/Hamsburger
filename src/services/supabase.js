@@ -11,10 +11,10 @@ export { supabase };
 
 export async function getUserScore(telegram) {
   const { data, error } = await supabase
-    .from('users') // Используй правильное имя таблицы
+    .from('users')
     .select('score')
     .eq('telegram', telegram)
-    .single(); // Ожидаем одну запись
+    .single(); 
 
   if (error) {
     console.error('Ошибка получения очков пользователя:', error.message);
@@ -24,7 +24,6 @@ export async function getUserScore(telegram) {
   return data;
 }
 
-// Функция для добавления или обновления очков пользователя
 export async function addOrUpdateUserScore(telegram, score) {
   const { data, error } = await supabase
     .from('users')

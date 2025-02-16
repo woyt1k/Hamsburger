@@ -13,8 +13,8 @@ bot.command('start', (ctx) => {
       Markup.button.url('Перейти в канал', telegramChannelUrl), 
       Markup.button.webApp(
         'Открыть приложение',
-        `${webAppUrl}?ref=${ctx.payload}&webview=fullscreen`
-      )
+        `${webAppUrl}?ref=${ctx.startPayload}&webview=fullscreen`
+      )     
     ])
   )
 })

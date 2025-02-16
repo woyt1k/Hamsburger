@@ -19,8 +19,14 @@ import { useTelegram } from '@/services/telegram'
 
 const loaded = ref(false)
 const app = useAppStore()
-
 const { tg } = useTelegram()
+const urlParams = new URLSearchParams(window.location.search)
+
+onMounted(() => {
+  app.init(urlParams.get('ref')).then(() => {
+    loaded.value = true
+  })
+})
 
 const startFullScreen = () => {
   if (window.Telegram && window.Telegram.WebApp) {
@@ -42,6 +48,3 @@ onMounted(() => {
   tg.expand()
 })
 </script>
-
-<style scoped>
-</style>
